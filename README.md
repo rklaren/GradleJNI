@@ -24,17 +24,17 @@ of building this with gradle.
 
 TODO: change to multi project build:
 
-:java 
-   builds jar & C++ artifact with JNIFoo.h generated with javah
-:native
-   builds DLL/so for an architecture, has dependency on artifact with JNIFoo.h
-   creates native artifact for the DLL/so
-:release-jar
-   grabs available DLL/so's and jar and bundles it to one release-jar that
-   can be deployed and run on multiple architectures
+	: java
+	   builds jar & C++ artifact with JNIFoo.h generated with javah
+	:native
+	   builds DLL/so for an architecture, has dependency on artifact with JNIFoo.h
+	   creates native artifact for the DLL/so
+	:release-jar
+	   grabs available DLL/so's and jar and bundles it to one release-jar that
+	   can be deployed and run on multiple architectures
 
-On a local machine this should depend on each other in the right way and build 
-just for the native architecture. 
+On a local machine this should depend on each other in the right way and build
+just for the native architecture.
 
 In CI one would
 - trigger the java build & block native builds
