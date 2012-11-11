@@ -27,13 +27,15 @@ targetCompatibility = 1.7
 
 [compileJava, compileTestJava]*.options.collect {options -> options.encoding = 'UTF-8'}
 
-// was easier to install 32 bit java then to configure various compilers to spit out 64 bit code
+// 32 bit for now...
 def javaHome = 'C:/Program Files (x86)/Java/jdk1.7.0_09'
 
 libraries {
 	main {
 		spec { 
-			args '-W', '-Wall', '-Wextra', '-static-libgcc', '-Wl,--add-stdcall-alias',
+			args '-W', '-Wall', '-Wextra', 
+					'-static-libgcc', 				// static link libgcc so everything is standalone
+					'-Wl,--add-stdcall-alias',		// ensure symbols can be found
 			 		"-I${javaHome}/include", "-I${javaHome}/include/win32",	// ugly have to include two directories depending on os 
 					"-I${buildDir}/generated"
 			outputFileName = 'foo.dll'
