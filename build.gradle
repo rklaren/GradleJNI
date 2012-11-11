@@ -1,0 +1,77 @@
+// TODO: change to multi project build
+// :java 
+//    builds jar & C++ artifact with JNIFoo.h generated with javah
+// :native
+//    builds dll/so for an architecture, has dependency on artifact with JNIFoo.h
+//    creates native artifact for the dll/so
+// :release-jar
+//    grabs available dlls and jar from java and bundles it to one release-jar that
+//		can be deployed and run on multiple architectures
+// On a local machine this would depend on eachother per default and build just for the
+// native architecture. 
+// In CI one would
+// - trigger the java build & block native builds
+// - run native builds in parallell
+// - after the above run release-jar gathering all bits
+// TODO investigate cross compiling with mingw32/mingw64 compiler on linux
+
+apply plugin: 'java'
+apply plugin: 'cpp-lib'
+apply plugin: 'eclipse'
+apply plugin: 'project-report'
+
+version = '1.0'
+
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
+[compileJava, compileTestJava]*.options.collect {options -> options.encoding = 'UTF-8'}
+
+// was easier to install 32 bit java then to configure various compilers to spit out 64 bit code
+def javaHome = 'C:/Program Files (x86)/Java/jdk1.7.0_09'
+
+libraries {
+	main {
+		spec { 
+			args '-W', '-Wall', '-Wextra', '-static-libgcc', '-Wl,--add-stdcall-alias',
+			 		"-I${javaHome}/include", "-I${javaHome}/include/win32",	// ugly have to include two directories depending on os 
+					"-I${buildDir}/generated"
+			outputFileName = 'foo.dll'
+		}
+	}
+}
+
+// must be same as the logic that loads the library from the jar
+String osName = System.getProperty("os.name");
+if(osName.toLowerCase().matches(".*windows.*")) osName = "Windows"
+String osArch = System.getProperty("os.arch");
+
+jar {
+	into("lib/${osName}-${osArch}", { from(libraries.main.spec.outputFile) })
+
+	manifest {
+		attributes 'Main-Class': 'eu.knightswhosay.demo.gradlejni.JNIFoo'
+	}
+}
+
+// hack..
+task javah {
+	// I guess this can be done a bit neater...
+	String inputClass = 'eu.knightswhosay.demo.gradlejni.JNIFoo';
+	String inputClassPath = inputClass.replaceAll('\\.', '/')+".class"
+	String outputFile = "${buildDir}/generated/JNIFoo.h"
+	inputs.file sourceSets.main.output.asFileTree.matching {
+		include inputClassPath
+	}
+	outputs.file outputFile
+	doLast {
+		ant.javah(class: inputClass, outputFile: outputFile, classpath:sourceSets.main.output.asPath)
+	}
+}
+
+// before we can compile javah must have built the header
+compileMain.dependsOn javah
+
+task wrapper(type: Wrapper) {
+	gradleVersion = '1.2'
+}
